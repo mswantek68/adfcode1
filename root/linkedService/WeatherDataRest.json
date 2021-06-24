@@ -1,0 +1,14 @@
+{
+	"name": "WeatherDataRest",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "https://api.weather.gov/points/39.7456,-97.0892",
+		"annotations": [],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "https://api.weather.gov/gridpoints/DTX/60,40/forecast/hourly",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}

@@ -1,0 +1,158 @@
+{
+	"name": "JSONWeatherData",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "jsonweatherapi.json",
+				"fileSystem": "raw"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"@context": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"id": {
+					"type": "string"
+				},
+				"type": {
+					"type": "string"
+				},
+				"geometry": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string"
+						},
+						"coordinates": {
+							"type": "array",
+							"items": {
+								"type": "number"
+							}
+						}
+					}
+				},
+				"properties": {
+					"type": "object",
+					"properties": {
+						"@id": {
+							"type": "string"
+						},
+						"@type": {
+							"type": "string"
+						},
+						"cwa": {
+							"type": "string"
+						},
+						"forecastOffice": {
+							"type": "string"
+						},
+						"gridId": {
+							"type": "string"
+						},
+						"gridX": {
+							"type": "integer"
+						},
+						"gridY": {
+							"type": "integer"
+						},
+						"forecast": {
+							"type": "string"
+						},
+						"forecastHourly": {
+							"type": "string"
+						},
+						"forecastGridData": {
+							"type": "string"
+						},
+						"observationStations": {
+							"type": "string"
+						},
+						"relativeLocation": {
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "string"
+								},
+								"geometry": {
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string"
+										},
+										"coordinates": {
+											"type": "array",
+											"items": {
+												"type": "number"
+											}
+										}
+									}
+								},
+								"properties": {
+									"type": "object",
+									"properties": {
+										"city": {
+											"type": "string"
+										},
+										"state": {
+											"type": "string"
+										},
+										"distance": {
+											"type": "object",
+											"properties": {
+												"value": {
+													"type": "number"
+												},
+												"unitCode": {
+													"type": "string"
+												}
+											}
+										},
+										"bearing": {
+											"type": "object",
+											"properties": {
+												"value": {
+													"type": "integer"
+												},
+												"unitCode": {
+													"type": "string"
+												}
+											}
+										}
+									}
+								}
+							}
+						},
+						"forecastZone": {
+							"type": "string"
+						},
+						"county": {
+							"type": "string"
+						},
+						"fireWeatherZone": {
+							"type": "string"
+						},
+						"timeZone": {
+							"type": "string"
+						},
+						"radarStation": {
+							"type": "string"
+						}
+					}
+				}
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

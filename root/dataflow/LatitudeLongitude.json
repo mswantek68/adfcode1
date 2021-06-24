@@ -1,0 +1,45 @@
+{
+	"name": "LatitudeLongitude",
+	"properties": {
+		"description": "Gets the LatLong from the Oakland County addresses.",
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "OaklandCountyAddresses",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "EnrichedAddresstest",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DerivedColumn1"
+				},
+				{
+					"name": "Filter1"
+				},
+				{
+					"name": "Flatten1"
+				},
+				{
+					"name": "Filter2"
+				},
+				{
+					"name": "DerivedColumn2"
+				}
+			],
+			"script": "source(output(\n\t\ttype as string,\n\t\tproperties as (hash as string, number as string, street as string, unit as string, city as string, district as string, region as string, postcode as string, id as string),\n\t\tgeometry as (type as string, coordinates as double[])\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> source1\nFilter1 derive(longitude = slice(geometry.coordinates, 1, 1)[1],\n\t\tlatitude = slice(geometry.coordinates, 2, 1)[1]) ~> DerivedColumn1\nsource1 filter(properties.hash=='e36dafc3f388dfd6') ~> Filter1\nsource1 foldDown(unroll(geometry.coordinates),\n\tmapColumn(\n\t\ttype,\n\t\tproperties,\n\t\tpoints = geometry.coordinates\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> Flatten1\nsource1 filter(properties.hash=='e36dafc3f388dfd6') ~> Filter2\nFilter2 derive(longitude = geometry.coordinates[1],\n\t\tlatitude = geometry.coordinates[2]) ~> DerivedColumn2\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> sink1"
+		}
+	}
+}

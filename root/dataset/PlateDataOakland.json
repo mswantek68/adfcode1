@@ -1,0 +1,13 @@
+{
+	"name": "PlateDataOakland",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "PlatedataOakland",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

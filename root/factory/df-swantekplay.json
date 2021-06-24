@@ -1,0 +1,9 @@
+{
+	"name": "df-swantekplay",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "7bf142d7-8d94-488d-8ff6-79043ce6fc1a",
+		"tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+	}
+}

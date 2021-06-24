@@ -1,0 +1,16 @@
+{
+	"name": "WeatherAPI",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "WeatherDataRest",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": ""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

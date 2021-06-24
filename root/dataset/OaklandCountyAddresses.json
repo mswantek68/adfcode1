@@ -1,0 +1,74 @@
+{
+	"name": "OaklandCountyAddresses",
+	"properties": {
+		"description": "from Open Data",
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "us_mi_oakland-addresses-county.geojson",
+				"fileSystem": "raw"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string"
+				},
+				"properties": {
+					"type": "object",
+					"properties": {
+						"hash": {
+							"type": "string"
+						},
+						"number": {
+							"type": "string"
+						},
+						"street": {
+							"type": "string"
+						},
+						"unit": {
+							"type": "string"
+						},
+						"city": {
+							"type": "string"
+						},
+						"district": {
+							"type": "string"
+						},
+						"region": {
+							"type": "string"
+						},
+						"postcode": {
+							"type": "string"
+						},
+						"id": {
+							"type": "string"
+						}
+					}
+				},
+				"geometry": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string"
+						},
+						"coordinates": {
+							"type": "array",
+							"items": {
+								"type": "number"
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

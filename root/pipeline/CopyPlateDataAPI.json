@@ -1,0 +1,113 @@
+{
+	"name": "CopyPlateDataAPI",
+	"properties": {
+		"activities": [
+			{
+				"name": "PlateDataOaklandAPI",
+				"description": "https://data.oaklandca.gov/resource/wy2w-ue82.json",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [
+					{
+						"name": "Destination",
+						"value": "swantekfssynapse//PlateDataOakland"
+					}
+				],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"copyBehavior": "FlattenHierarchy"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".csv"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "$['red_vrm']"
+								},
+								"sink": {
+									"name": "PlateNumber",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"path": "$['red_timestamp']"
+								},
+								"sink": {
+									"name": "Time",
+									"type": "DateTime"
+								}
+							},
+							{
+								"source": {
+									"path": "$['location_1']['latitude']"
+								},
+								"sink": {
+									"name": "latitude",
+									"type": "Int16"
+								}
+							},
+							{
+								"source": {
+									"path": "$['location_1']['longitude']"
+								},
+								"sink": {
+									"name": "longitude",
+									"type": "Int16"
+								}
+							},
+							{
+								"source": {
+									"path": "$[':@computed_region_w23w_jfhw']"
+								},
+								"sink": {
+									"name": "region",
+									"type": "String"
+								}
+							}
+						],
+						"mapComplexValuesToString": false
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "PlateDataOakland",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "PlateDataOaklanddelimited",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-06-16T18:46:10Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
