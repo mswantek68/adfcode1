@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "df-swantekplay"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"swantekgeneralblob_connectionString": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://swantekdlsynapse.dfs.core.windows.net"
+		},
+		"PlatedataOakland_properties_typeProperties_url": {
+			"value": "https://data.oaklandca.gov/resource/wy2w-ue82.json"
+		},
+		"WeatherDataRest_properties_typeProperties_url": {
+			"value": "https://api.weather.gov/gridpoints/DTX/60,40/forecast/hourly"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

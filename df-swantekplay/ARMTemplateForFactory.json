@@ -1,0 +1,2206 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "df-swantekplay"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"swantekgeneralblob_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'swantekgeneralblob'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://swantekdlsynapse.dfs.core.windows.net"
+		},
+		"PlatedataOakland_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://data.oaklandca.gov/resource/wy2w-ue82.json"
+		},
+		"WeatherDataRest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://api.weather.gov/gridpoints/DTX/60,40/forecast/hourly"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ConvertWeatherData')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ConvertCtoF",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "ConvertCtoF",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"outputsinglejson": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-22T17:56:29Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/ConvertCtoF')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CopyPlateDataAPI')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "PlateDataOaklandAPI",
+						"description": "https://data.oaklandca.gov/resource/wy2w-ue82.json",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Destination",
+								"value": "swantekfssynapse//PlateDataOakland"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET"
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "FlattenHierarchy"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['red_vrm']"
+										},
+										"sink": {
+											"name": "PlateNumber",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"path": "$['red_timestamp']"
+										},
+										"sink": {
+											"name": "Time",
+											"type": "DateTime"
+										}
+									},
+									{
+										"source": {
+											"path": "$['location_1']['latitude']"
+										},
+										"sink": {
+											"name": "latitude",
+											"type": "Int16"
+										}
+									},
+									{
+										"source": {
+											"path": "$['location_1']['longitude']"
+										},
+										"sink": {
+											"name": "longitude",
+											"type": "Int16"
+										}
+									},
+									{
+										"source": {
+											"path": "$[':@computed_region_w23w_jfhw']"
+										},
+										"sink": {
+											"name": "region",
+											"type": "String"
+										}
+									}
+								],
+								"mapComplexValuesToString": false
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "PlateDataOakland",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "PlateDataOaklanddelimited",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-16T18:46:10Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/PlateDataOakland')]",
+				"[concat(variables('factoryId'), '/datasets/PlateDataOaklanddelimited')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/copyweatherdata')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyWeatherData",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET"
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings",
+									"filePattern": "setOfObjects"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "WeatherAPI",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "jsonweather",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "parsejson",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "CopyWeatherData",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "parsejson",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"JSONNeeded": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-17T13:30:30Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/WeatherAPI')]",
+				"[concat(variables('factoryId'), '/datasets/jsonweather')]",
+				"[concat(variables('factoryId'), '/dataflows/parsejson')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/createdtwweatherjson')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ConvertCtoF",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "ConvertCtoF",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"outputsinglejson": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-22T17:56:29Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/ConvertCtoF')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "FlattenHierarchy"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['type']"
+										},
+										"sink": {
+											"name": "type"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['hash']"
+										},
+										"sink": {
+											"name": "hash"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['number']"
+										},
+										"sink": {
+											"name": "number"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['street']"
+										},
+										"sink": {
+											"name": "street"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['unit']"
+										},
+										"sink": {
+											"name": "unit"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['city']"
+										},
+										"sink": {
+											"name": "city"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['district']"
+										},
+										"sink": {
+											"name": "district"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['region']"
+										},
+										"sink": {
+											"name": "region"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['postcode']"
+										},
+										"sink": {
+											"name": "postcode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['properties']['id']"
+										},
+										"sink": {
+											"name": "id"
+										}
+									},
+									{
+										"source": {
+											"path": "$['geometry']['coordinates'][0]"
+										},
+										"sink": {
+											"name": "longitude"
+										}
+									},
+									{
+										"source": {
+											"path": "$['geometry']['coordinates'][1]"
+										},
+										"sink": {
+											"name": "latitude"
+										}
+									}
+								],
+								"collectionReference": "$['geometry']['coordinates']",
+								"mapComplexValuesToString": false
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "OaklandCountyAddresses",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "OCAddressCSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-16T18:46:11Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/OaklandCountyAddresses')]",
+				"[concat(variables('factoryId'), '/datasets/OCAddressCSV')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DTWWeather')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "WeatherDataFromDTW",
+						"fileSystem": "weatherdata"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "STATION",
+						"type": "String"
+					},
+					{
+						"name": "DATE",
+						"type": "String"
+					},
+					{
+						"name": "SOURCE",
+						"type": "String"
+					},
+					{
+						"name": "LATITUDE",
+						"type": "String"
+					},
+					{
+						"name": "LONGITUDE",
+						"type": "String"
+					},
+					{
+						"name": "ELEVATION",
+						"type": "String"
+					},
+					{
+						"name": "NAME",
+						"type": "String"
+					},
+					{
+						"name": "REPORT_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "CALL_SIGN",
+						"type": "String"
+					},
+					{
+						"name": "QUALITY_CONTROL",
+						"type": "String"
+					},
+					{
+						"name": "WND",
+						"type": "String"
+					},
+					{
+						"name": "CIG",
+						"type": "String"
+					},
+					{
+						"name": "VIS",
+						"type": "String"
+					},
+					{
+						"name": "TMP",
+						"type": "String"
+					},
+					{
+						"name": "DEW",
+						"type": "String"
+					},
+					{
+						"name": "SLP",
+						"type": "String"
+					},
+					{
+						"name": "AA1",
+						"type": "String"
+					},
+					{
+						"name": "AA2",
+						"type": "String"
+					},
+					{
+						"name": "AA3",
+						"type": "String"
+					},
+					{
+						"name": "AB1",
+						"type": "String"
+					},
+					{
+						"name": "AD1",
+						"type": "String"
+					},
+					{
+						"name": "AE1",
+						"type": "String"
+					},
+					{
+						"name": "AH1",
+						"type": "String"
+					},
+					{
+						"name": "AH2",
+						"type": "String"
+					},
+					{
+						"name": "AH3",
+						"type": "String"
+					},
+					{
+						"name": "AH4",
+						"type": "String"
+					},
+					{
+						"name": "AH5",
+						"type": "String"
+					},
+					{
+						"name": "AH6",
+						"type": "String"
+					},
+					{
+						"name": "AI1",
+						"type": "String"
+					},
+					{
+						"name": "AI2",
+						"type": "String"
+					},
+					{
+						"name": "AI3",
+						"type": "String"
+					},
+					{
+						"name": "AI4",
+						"type": "String"
+					},
+					{
+						"name": "AI5",
+						"type": "String"
+					},
+					{
+						"name": "AI6",
+						"type": "String"
+					},
+					{
+						"name": "AJ1",
+						"type": "String"
+					},
+					{
+						"name": "AK1",
+						"type": "String"
+					},
+					{
+						"name": "AL1",
+						"type": "String"
+					},
+					{
+						"name": "AM1",
+						"type": "String"
+					},
+					{
+						"name": "AN1",
+						"type": "String"
+					},
+					{
+						"name": "AT1",
+						"type": "String"
+					},
+					{
+						"name": "AT2",
+						"type": "String"
+					},
+					{
+						"name": "AT3",
+						"type": "String"
+					},
+					{
+						"name": "AT4",
+						"type": "String"
+					},
+					{
+						"name": "AT5",
+						"type": "String"
+					},
+					{
+						"name": "AT6",
+						"type": "String"
+					},
+					{
+						"name": "AT7",
+						"type": "String"
+					},
+					{
+						"name": "AT8",
+						"type": "String"
+					},
+					{
+						"name": "AU1",
+						"type": "String"
+					},
+					{
+						"name": "AU2",
+						"type": "String"
+					},
+					{
+						"name": "AU3",
+						"type": "String"
+					},
+					{
+						"name": "AW1",
+						"type": "String"
+					},
+					{
+						"name": "AW2",
+						"type": "String"
+					},
+					{
+						"name": "AW3",
+						"type": "String"
+					},
+					{
+						"name": "AW4",
+						"type": "String"
+					},
+					{
+						"name": "AX1",
+						"type": "String"
+					},
+					{
+						"name": "AX2",
+						"type": "String"
+					},
+					{
+						"name": "AX3",
+						"type": "String"
+					},
+					{
+						"name": "AX4",
+						"type": "String"
+					},
+					{
+						"name": "ED1",
+						"type": "String"
+					},
+					{
+						"name": "GA1",
+						"type": "String"
+					},
+					{
+						"name": "GA2",
+						"type": "String"
+					},
+					{
+						"name": "GA3",
+						"type": "String"
+					},
+					{
+						"name": "GD1",
+						"type": "String"
+					},
+					{
+						"name": "GD2",
+						"type": "String"
+					},
+					{
+						"name": "GD3",
+						"type": "String"
+					},
+					{
+						"name": "GD4",
+						"type": "String"
+					},
+					{
+						"name": "GE1",
+						"type": "String"
+					},
+					{
+						"name": "GF1",
+						"type": "String"
+					},
+					{
+						"name": "KA1",
+						"type": "String"
+					},
+					{
+						"name": "KA2",
+						"type": "String"
+					},
+					{
+						"name": "KB1",
+						"type": "String"
+					},
+					{
+						"name": "KB2",
+						"type": "String"
+					},
+					{
+						"name": "KB3",
+						"type": "String"
+					},
+					{
+						"name": "KC1",
+						"type": "String"
+					},
+					{
+						"name": "KC2",
+						"type": "String"
+					},
+					{
+						"name": "KD1",
+						"type": "String"
+					},
+					{
+						"name": "KD2",
+						"type": "String"
+					},
+					{
+						"name": "KE1",
+						"type": "String"
+					},
+					{
+						"name": "KG1",
+						"type": "String"
+					},
+					{
+						"name": "KG2",
+						"type": "String"
+					},
+					{
+						"name": "MA1",
+						"type": "String"
+					},
+					{
+						"name": "MD1",
+						"type": "String"
+					},
+					{
+						"name": "MF1",
+						"type": "String"
+					},
+					{
+						"name": "MG1",
+						"type": "String"
+					},
+					{
+						"name": "MH1",
+						"type": "String"
+					},
+					{
+						"name": "MK1",
+						"type": "String"
+					},
+					{
+						"name": "MV1",
+						"type": "String"
+					},
+					{
+						"name": "MW1",
+						"type": "String"
+					},
+					{
+						"name": "MW2",
+						"type": "String"
+					},
+					{
+						"name": "MW3",
+						"type": "String"
+					},
+					{
+						"name": "MW4",
+						"type": "String"
+					},
+					{
+						"name": "MW5",
+						"type": "String"
+					},
+					{
+						"name": "OC1",
+						"type": "String"
+					},
+					{
+						"name": "OD1",
+						"type": "String"
+					},
+					{
+						"name": "OE1",
+						"type": "String"
+					},
+					{
+						"name": "OE2",
+						"type": "String"
+					},
+					{
+						"name": "OE3",
+						"type": "String"
+					},
+					{
+						"name": "RH1",
+						"type": "String"
+					},
+					{
+						"name": "RH2",
+						"type": "String"
+					},
+					{
+						"name": "RH3",
+						"type": "String"
+					},
+					{
+						"name": "WA1",
+						"type": "String"
+					},
+					{
+						"name": "REM",
+						"type": "String"
+					},
+					{
+						"name": "EQD",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DTWWeather2fixdate')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "weatherdata"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/EnrichedAddresstest')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "enriched"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/JSONWeatherData')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "jsonweatherapi.json",
+						"fileSystem": "raw"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"@context": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"id": {
+							"type": "string"
+						},
+						"type": {
+							"type": "string"
+						},
+						"geometry": {
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "string"
+								},
+								"coordinates": {
+									"type": "array",
+									"items": {
+										"type": "number"
+									}
+								}
+							}
+						},
+						"properties": {
+							"type": "object",
+							"properties": {
+								"@id": {
+									"type": "string"
+								},
+								"@type": {
+									"type": "string"
+								},
+								"cwa": {
+									"type": "string"
+								},
+								"forecastOffice": {
+									"type": "string"
+								},
+								"gridId": {
+									"type": "string"
+								},
+								"gridX": {
+									"type": "integer"
+								},
+								"gridY": {
+									"type": "integer"
+								},
+								"forecast": {
+									"type": "string"
+								},
+								"forecastHourly": {
+									"type": "string"
+								},
+								"forecastGridData": {
+									"type": "string"
+								},
+								"observationStations": {
+									"type": "string"
+								},
+								"relativeLocation": {
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string"
+										},
+										"geometry": {
+											"type": "object",
+											"properties": {
+												"type": {
+													"type": "string"
+												},
+												"coordinates": {
+													"type": "array",
+													"items": {
+														"type": "number"
+													}
+												}
+											}
+										},
+										"properties": {
+											"type": "object",
+											"properties": {
+												"city": {
+													"type": "string"
+												},
+												"state": {
+													"type": "string"
+												},
+												"distance": {
+													"type": "object",
+													"properties": {
+														"value": {
+															"type": "number"
+														},
+														"unitCode": {
+															"type": "string"
+														}
+													}
+												},
+												"bearing": {
+													"type": "object",
+													"properties": {
+														"value": {
+															"type": "integer"
+														},
+														"unitCode": {
+															"type": "string"
+														}
+													}
+												}
+											}
+										}
+									}
+								},
+								"forecastZone": {
+									"type": "string"
+								},
+								"county": {
+									"type": "string"
+								},
+								"fireWeatherZone": {
+									"type": "string"
+								},
+								"timeZone": {
+									"type": "string"
+								},
+								"radarStation": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/OCAddressCSV')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "enriched"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/OaklandCountyAddresscsv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/OaklandCountyAddresses')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "from Open Data",
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "us_mi_oakland-addresses-county.geojson",
+						"fileSystem": "raw"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "string"
+						},
+						"properties": {
+							"type": "object",
+							"properties": {
+								"hash": {
+									"type": "string"
+								},
+								"number": {
+									"type": "string"
+								},
+								"street": {
+									"type": "string"
+								},
+								"unit": {
+									"type": "string"
+								},
+								"city": {
+									"type": "string"
+								},
+								"district": {
+									"type": "string"
+								},
+								"region": {
+									"type": "string"
+								},
+								"postcode": {
+									"type": "string"
+								},
+								"id": {
+									"type": "string"
+								}
+							}
+						},
+						"geometry": {
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "string"
+								},
+								"coordinates": {
+									"type": "array",
+									"items": {
+										"type": "number"
+									}
+								}
+							}
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PlateDataOakland')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "PlatedataOakland",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/PlatedataOakland')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PlateDataOaklanddelimited')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "swantekfssynapse"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/RestResource')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Connection to your REST/HTTP",
+				"linkedServiceName": {
+					"referenceName": "WeatherDataRest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/WeatherDataRest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/WeatherAPI')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "WeatherDataRest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": ""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/WeatherDataRest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/addressesscsv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "swantekfssynapse"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dtwhistoricalweatherdata')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "72537094847 (2).csv",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "STATION",
+						"type": "String"
+					},
+					{
+						"name": "DATE",
+						"type": "String"
+					},
+					{
+						"name": "SOURCE",
+						"type": "String"
+					},
+					{
+						"name": "LATITUDE",
+						"type": "String"
+					},
+					{
+						"name": "LONGITUDE",
+						"type": "String"
+					},
+					{
+						"name": "ELEVATION",
+						"type": "String"
+					},
+					{
+						"name": "NAME",
+						"type": "String"
+					},
+					{
+						"name": "REPORT_TYPE",
+						"type": "String"
+					},
+					{
+						"name": "CALL_SIGN",
+						"type": "String"
+					},
+					{
+						"name": "QUALITY_CONTROL",
+						"type": "String"
+					},
+					{
+						"name": "WND",
+						"type": "String"
+					},
+					{
+						"name": "CIG",
+						"type": "String"
+					},
+					{
+						"name": "VIS",
+						"type": "String"
+					},
+					{
+						"name": "TMP",
+						"type": "String"
+					},
+					{
+						"name": "DEW",
+						"type": "String"
+					},
+					{
+						"name": "SLP",
+						"type": "String"
+					},
+					{
+						"name": "AA1",
+						"type": "String"
+					},
+					{
+						"name": "AA2",
+						"type": "String"
+					},
+					{
+						"name": "AA3",
+						"type": "String"
+					},
+					{
+						"name": "AB1",
+						"type": "String"
+					},
+					{
+						"name": "AD1",
+						"type": "String"
+					},
+					{
+						"name": "AE1",
+						"type": "String"
+					},
+					{
+						"name": "AH1",
+						"type": "String"
+					},
+					{
+						"name": "AH2",
+						"type": "String"
+					},
+					{
+						"name": "AH3",
+						"type": "String"
+					},
+					{
+						"name": "AH4",
+						"type": "String"
+					},
+					{
+						"name": "AH5",
+						"type": "String"
+					},
+					{
+						"name": "AH6",
+						"type": "String"
+					},
+					{
+						"name": "AI1",
+						"type": "String"
+					},
+					{
+						"name": "AI2",
+						"type": "String"
+					},
+					{
+						"name": "AI3",
+						"type": "String"
+					},
+					{
+						"name": "AI4",
+						"type": "String"
+					},
+					{
+						"name": "AI5",
+						"type": "String"
+					},
+					{
+						"name": "AI6",
+						"type": "String"
+					},
+					{
+						"name": "AJ1",
+						"type": "String"
+					},
+					{
+						"name": "AK1",
+						"type": "String"
+					},
+					{
+						"name": "AL1",
+						"type": "String"
+					},
+					{
+						"name": "AM1",
+						"type": "String"
+					},
+					{
+						"name": "AN1",
+						"type": "String"
+					},
+					{
+						"name": "AT1",
+						"type": "String"
+					},
+					{
+						"name": "AT2",
+						"type": "String"
+					},
+					{
+						"name": "AT3",
+						"type": "String"
+					},
+					{
+						"name": "AT4",
+						"type": "String"
+					},
+					{
+						"name": "AT5",
+						"type": "String"
+					},
+					{
+						"name": "AT6",
+						"type": "String"
+					},
+					{
+						"name": "AT7",
+						"type": "String"
+					},
+					{
+						"name": "AT8",
+						"type": "String"
+					},
+					{
+						"name": "AU1",
+						"type": "String"
+					},
+					{
+						"name": "AU2",
+						"type": "String"
+					},
+					{
+						"name": "AU3",
+						"type": "String"
+					},
+					{
+						"name": "AW1",
+						"type": "String"
+					},
+					{
+						"name": "AW2",
+						"type": "String"
+					},
+					{
+						"name": "AW3",
+						"type": "String"
+					},
+					{
+						"name": "AW4",
+						"type": "String"
+					},
+					{
+						"name": "AX1",
+						"type": "String"
+					},
+					{
+						"name": "AX2",
+						"type": "String"
+					},
+					{
+						"name": "AX3",
+						"type": "String"
+					},
+					{
+						"name": "AX4",
+						"type": "String"
+					},
+					{
+						"name": "ED1",
+						"type": "String"
+					},
+					{
+						"name": "GA1",
+						"type": "String"
+					},
+					{
+						"name": "GA2",
+						"type": "String"
+					},
+					{
+						"name": "GA3",
+						"type": "String"
+					},
+					{
+						"name": "GD1",
+						"type": "String"
+					},
+					{
+						"name": "GD2",
+						"type": "String"
+					},
+					{
+						"name": "GD3",
+						"type": "String"
+					},
+					{
+						"name": "GD4",
+						"type": "String"
+					},
+					{
+						"name": "GE1",
+						"type": "String"
+					},
+					{
+						"name": "GF1",
+						"type": "String"
+					},
+					{
+						"name": "KA1",
+						"type": "String"
+					},
+					{
+						"name": "KA2",
+						"type": "String"
+					},
+					{
+						"name": "KB1",
+						"type": "String"
+					},
+					{
+						"name": "KB2",
+						"type": "String"
+					},
+					{
+						"name": "KB3",
+						"type": "String"
+					},
+					{
+						"name": "KC1",
+						"type": "String"
+					},
+					{
+						"name": "KC2",
+						"type": "String"
+					},
+					{
+						"name": "KD1",
+						"type": "String"
+					},
+					{
+						"name": "KD2",
+						"type": "String"
+					},
+					{
+						"name": "KE1",
+						"type": "String"
+					},
+					{
+						"name": "KG1",
+						"type": "String"
+					},
+					{
+						"name": "KG2",
+						"type": "String"
+					},
+					{
+						"name": "MA1",
+						"type": "String"
+					},
+					{
+						"name": "MD1",
+						"type": "String"
+					},
+					{
+						"name": "MF1",
+						"type": "String"
+					},
+					{
+						"name": "MG1",
+						"type": "String"
+					},
+					{
+						"name": "MH1",
+						"type": "String"
+					},
+					{
+						"name": "MK1",
+						"type": "String"
+					},
+					{
+						"name": "MV1",
+						"type": "String"
+					},
+					{
+						"name": "MW1",
+						"type": "String"
+					},
+					{
+						"name": "MW2",
+						"type": "String"
+					},
+					{
+						"name": "MW3",
+						"type": "String"
+					},
+					{
+						"name": "MW4",
+						"type": "String"
+					},
+					{
+						"name": "MW5",
+						"type": "String"
+					},
+					{
+						"name": "OC1",
+						"type": "String"
+					},
+					{
+						"name": "OD1",
+						"type": "String"
+					},
+					{
+						"name": "OE1",
+						"type": "String"
+					},
+					{
+						"name": "OE2",
+						"type": "String"
+					},
+					{
+						"name": "OE3",
+						"type": "String"
+					},
+					{
+						"name": "RH1",
+						"type": "String"
+					},
+					{
+						"name": "RH2",
+						"type": "String"
+					},
+					{
+						"name": "RH3",
+						"type": "String"
+					},
+					{
+						"name": "WA1",
+						"type": "String"
+					},
+					{
+						"name": "REM",
+						"type": "String"
+					},
+					{
+						"name": "EQD",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dtwhistoricweather')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "weatherdata"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/jsonweather')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "jsonweather.json",
+						"fileSystem": "raw"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/oaklandcountyaddressesdataflowcsv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "type",
+						"type": "String"
+					},
+					{
+						"name": "hash",
+						"type": "String"
+					},
+					{
+						"name": "number",
+						"type": "String"
+					},
+					{
+						"name": "street",
+						"type": "String"
+					},
+					{
+						"name": "unit",
+						"type": "String"
+					},
+					{
+						"name": "city",
+						"type": "String"
+					},
+					{
+						"name": "district",
+						"type": "String"
+					},
+					{
+						"name": "region",
+						"type": "String"
+					},
+					{
+						"name": "postcode",
+						"type": "String"
+					},
+					{
+						"name": "id",
+						"type": "String"
+					},
+					{
+						"name": "longitude",
+						"type": "String"
+					},
+					{
+						"name": "latitude",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PlatedataOakland')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('PlatedataOakland_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/WeatherDataRest')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "https://api.weather.gov/points/39.7456,-97.0892",
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('WeatherDataRest_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/swantekgeneralblob')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('swantekgeneralblob_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ConvertCtoF')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "dtwhistoricalweatherdata",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"linkedService": {
+								"referenceName": "AzureDataLakeStorage1",
+								"type": "LinkedServiceReference"
+							},
+							"name": "outputsinglejson"
+						}
+					],
+					"transformations": [
+						{
+							"name": "TMPInFarenheit"
+						},
+						{
+							"name": "Filter1"
+						},
+						{
+							"name": "createnewdate"
+						},
+						{
+							"name": "SurrogateKey1"
+						},
+						{
+							"name": "selectonlytemptime"
+						}
+					],
+					"script": "source(output(\n\t\tSTATION as string,\n\t\tDATE as string,\n\t\tSOURCE as string,\n\t\tLATITUDE as string,\n\t\tLONGITUDE as string,\n\t\tELEVATION as string,\n\t\tNAME as string,\n\t\tREPORT_TYPE as string,\n\t\tCALL_SIGN as string,\n\t\tQUALITY_CONTROL as string,\n\t\tWND as string,\n\t\tCIG as string,\n\t\tVIS as string,\n\t\tTMP as string,\n\t\tDEW as string,\n\t\tSLP as string,\n\t\tAA1 as string,\n\t\tAA2 as string,\n\t\tAA3 as string,\n\t\tAB1 as string,\n\t\tAD1 as string,\n\t\tAE1 as string,\n\t\tAH1 as string,\n\t\tAH2 as string,\n\t\tAH3 as string,\n\t\tAH4 as string,\n\t\tAH5 as string,\n\t\tAH6 as string,\n\t\tAI1 as string,\n\t\tAI2 as string,\n\t\tAI3 as string,\n\t\tAI4 as string,\n\t\tAI5 as string,\n\t\tAI6 as string,\n\t\tAJ1 as string,\n\t\tAK1 as string,\n\t\tAL1 as string,\n\t\tAM1 as string,\n\t\tAN1 as string,\n\t\tAT1 as string,\n\t\tAT2 as string,\n\t\tAT3 as string,\n\t\tAT4 as string,\n\t\tAT5 as string,\n\t\tAT6 as string,\n\t\tAT7 as string,\n\t\tAT8 as string,\n\t\tAU1 as string,\n\t\tAU2 as string,\n\t\tAU3 as string,\n\t\tAW1 as string,\n\t\tAW2 as string,\n\t\tAW3 as string,\n\t\tAW4 as string,\n\t\tAX1 as string,\n\t\tAX2 as string,\n\t\tAX3 as string,\n\t\tAX4 as string,\n\t\tED1 as string,\n\t\tGA1 as string,\n\t\tGA2 as string,\n\t\tGA3 as string,\n\t\tGD1 as string,\n\t\tGD2 as string,\n\t\tGD3 as string,\n\t\tGD4 as string,\n\t\tGE1 as string,\n\t\tGF1 as string,\n\t\tKA1 as string,\n\t\tKA2 as string,\n\t\tKB1 as string,\n\t\tKB2 as string,\n\t\tKB3 as string,\n\t\tKC1 as string,\n\t\tKC2 as string,\n\t\tKD1 as string,\n\t\tKD2 as string,\n\t\tKE1 as string,\n\t\tKG1 as string,\n\t\tKG2 as string,\n\t\tMA1 as string,\n\t\tMD1 as string,\n\t\tMF1 as string,\n\t\tMG1 as string,\n\t\tMH1 as string,\n\t\tMK1 as string,\n\t\tMV1 as string,\n\t\tMW1 as string,\n\t\tMW2 as string,\n\t\tMW3 as string,\n\t\tMW4 as string,\n\t\tMW5 as string,\n\t\tOC1 as string,\n\t\tOD1 as string,\n\t\tOE1 as string,\n\t\tOE2 as string,\n\t\tOE3 as string,\n\t\tRH1 as string,\n\t\tRH2 as string,\n\t\tRH3 as string,\n\t\tWA1 as string,\n\t\tREM as string,\n\t\tEQD as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> source1\nFilter1 derive(TMPinF = round(multiply(divide(toInteger(split(TMP,',')[1]),10),1.8) +32,2)) ~> TMPInFarenheit\nsource1 filter(REPORT_TYPE == 'FM-15') ~> Filter1\nTMPInFarenheit derive(Date1 = toTimestamp(concat(substring(DATE,1,4),'-',substring(DATE,6,2),'-',substring(DATE,9,2),' ',substring(DATE,12,2),':',substring(DATE,15,2),':',substring(DATE,18,2)))) ~> createnewdate\ncreatenewdate keyGenerate(output(ID as long),\n\tstartAt: 1L) ~> SurrogateKey1\nSurrogateKey1 select(mapColumn(\n\t\tID,\n\t\tDateofobs = Date1,\n\t\tTMPinF\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> selectonlytemptime\nselectonlytemptime sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'json',\n\tfileSystem: 'weatherdata',\n\tfolderPath: 'output',\n\ttruncate: true,\n\tpartitionFileNames:['dtwweathertmps'],\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> outputsinglejson"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/dtwhistoricalweatherdata')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LatitudeLongitude')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Gets the LatLong from the Oakland County addresses.",
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "OaklandCountyAddresses",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "EnrichedAddresstest",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "DerivedColumn1"
+						},
+						{
+							"name": "Filter1"
+						},
+						{
+							"name": "Flatten1"
+						},
+						{
+							"name": "Filter2"
+						},
+						{
+							"name": "DerivedColumn2"
+						}
+					],
+					"script": "source(output(\n\t\ttype as string,\n\t\tproperties as (hash as string, number as string, street as string, unit as string, city as string, district as string, region as string, postcode as string, id as string),\n\t\tgeometry as (type as string, coordinates as double[])\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> source1\nFilter1 derive(longitude = slice(geometry.coordinates, 1, 1)[1],\n\t\tlatitude = slice(geometry.coordinates, 2, 1)[1]) ~> DerivedColumn1\nsource1 filter(properties.hash=='e36dafc3f388dfd6') ~> Filter1\nsource1 foldDown(unroll(geometry.coordinates),\n\tmapColumn(\n\t\ttype,\n\t\tproperties,\n\t\tpoints = geometry.coordinates\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> Flatten1\nsource1 filter(properties.hash=='e36dafc3f388dfd6') ~> Filter2\nFilter2 derive(longitude = geometry.coordinates[1],\n\t\tlatitude = geometry.coordinates[2]) ~> DerivedColumn2\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> sink1"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/OaklandCountyAddresses')]",
+				"[concat(variables('factoryId'), '/datasets/EnrichedAddresstest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/parsejson')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "jsonweather",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"name": "JSONNeeded"
+						}
+					],
+					"transformations": [],
+					"script": "source(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> source1\nsource1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tstore: 'cache',\n\tformat: 'inline',\n\toutput: true,\n\tsaveOrder: 1) ~> JSONNeeded"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/jsonweather')]"
+			]
+		}
+	]
+}
