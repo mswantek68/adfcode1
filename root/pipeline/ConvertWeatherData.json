@@ -73,11 +73,6 @@
 						"type": "TabularTranslator",
 						"mappings": [
 							{
-								"sink": {
-									"path": "$"
-								}
-							},
-							{
 								"source": {
 									"name": "ID",
 									"type": "String"
