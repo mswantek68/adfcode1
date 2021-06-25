@@ -148,6 +148,10 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@concat(utcnow(),'.csv')",
+							"type": "Expression"
+						},
 						"folderPath": "output",
 						"fileSystem": "weatherdata"
 					}
