@@ -10,11 +10,10 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": {
-					"value": "concat(utcnow(),'.csv'",
+				"folderPath": {
+					"value": "concat('output/',year(utcnow()),'/',month(utcnow()),'/',day(utcnow()),'/',hour(utcnow()))",
 					"type": "Expression"
 				},
-				"folderPath": "output",
 				"fileSystem": "weatherdata"
 			},
 			"columnDelimiter": ",",
