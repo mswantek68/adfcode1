@@ -686,7 +686,7 @@
 									{
 										"source": {
 											"name": "TMPinF",
-											"type": "Int16"
+											"type": "Single"
 										},
 										"sink": {
 											"path": "$['TempInFarenheit']"
