@@ -150,7 +150,9 @@
 				"type": "Json",
 				"typeProperties": {
 					"location": {
-						"type": "AzureBlobFSLocation"
+						"type": "AzureBlobFSLocation",
+						"folderPath": "output/json",
+						"fileSystem": "weatherdata"
 					}
 				},
 				"schema": {}
@@ -171,7 +173,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
-						"folderPath": "output",
+						"folderPath": "output/csv",
 						"fileSystem": "weatherdata"
 					},
 					"columnDelimiter": ",",
