@@ -76,6 +76,33 @@
 								"sink": {
 									"path": "$"
 								}
+							},
+							{
+								"source": {
+									"name": "ID",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$['ID']"
+								}
+							},
+							{
+								"source": {
+									"name": "Dateofobs",
+									"type": "DateTime"
+								},
+								"sink": {
+									"path": "$['DateofObservation']"
+								}
+							},
+							{
+								"source": {
+									"name": "TMPinF",
+									"type": "Int16"
+								},
+								"sink": {
+									"path": "$['TempInFarenheit']"
+								}
 							}
 						]
 					}
