@@ -15,9 +15,17 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'swantekgeneralblob'"
 		},
+		"targetcosmosdb_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'targetcosmosdb'"
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://swantekdlsynapse.dfs.core.windows.net"
+		},
+		"NutritionJson_sasUri": {
+			"type": "secureString",
+			"metadata": "Secure string for 'sasUri' of 'NutritionJson'"
 		},
 		"PlatedataOakland_properties_typeProperties_url": {
 			"type": "string",
@@ -60,8 +68,14 @@
 					"swantekgeneralblob_connectionString": {
 						"value": "[parameters('swantekgeneralblob_connectionString')]"
 					},
+					"targetcosmosdb_connectionString": {
+						"value": "[parameters('targetcosmosdb_connectionString')]"
+					},
 					"AzureDataLakeStorage1_properties_typeProperties_url": {
 						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
+					},
+					"NutritionJson_sasUri": {
+						"value": "[parameters('NutritionJson_sasUri')]"
 					},
 					"PlatedataOakland_properties_typeProperties_url": {
 						"value": "[parameters('PlatedataOakland_properties_typeProperties_url')]"

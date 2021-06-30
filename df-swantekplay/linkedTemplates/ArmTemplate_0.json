@@ -15,9 +15,17 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'swantekgeneralblob'"
 		},
+		"targetcosmosdb_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'targetcosmosdb'"
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://swantekdlsynapse.dfs.core.windows.net"
+		},
+		"NutritionJson_sasUri": {
+			"type": "secureString",
+			"metadata": "Secure string for 'sasUri' of 'NutritionJson'"
 		},
 		"PlatedataOakland_properties_typeProperties_url": {
 			"type": "string",
@@ -45,6 +53,19 @@
 						"type": "SecureString",
 						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
 					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/NutritionJson')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"sasUri": "[parameters('NutritionJson_sasUri')]"
 				}
 			},
 			"dependsOn": []
@@ -89,6 +110,19 @@
 				"type": "AzureBlobStorage",
 				"typeProperties": {
 					"connectionString": "[parameters('swantekgeneralblob_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/targetcosmosdb')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "CosmosDb",
+				"typeProperties": {
+					"connectionString": "[parameters('targetcosmosdb_connectionString')]"
 				}
 			},
 			"dependsOn": []
@@ -562,6 +596,26 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/DestinationDataset_gij')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "targetcosmosdb",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "CosmosDbSqlApiCollection",
+				"schema": {},
+				"typeProperties": {
+					"collectionName": "FoodCollection"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/targetcosmosdb')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/EnrichedAddresstest')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -980,6 +1034,97 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/SourceDataset_gij')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "NutritionJson",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "NutritionData.json",
+						"container": "nutritiondata"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"id": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"tags": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"version": {
+							"type": "integer"
+						},
+						"foodGroup": {
+							"type": "string"
+						},
+						"nutrients": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"id": {
+										"type": "string"
+									},
+									"description": {
+										"type": "string"
+									},
+									"nutritionValue": {
+										"type": "number"
+									},
+									"units": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"servings": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"amount": {
+										"type": "integer"
+									},
+									"description": {
+										"type": "string"
+									},
+									"weightInGrams": {
+										"type": "number"
+									}
+								}
+							}
+						},
+						"isFromSurvey": {
+							"type": "boolean"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/NutritionJson')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/WeatherAPI')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -1021,523 +1166,6 @@
 					"quoteChar": "\""
 				},
 				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/csvtojson_json')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "Json",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileName": {
-							"value": "@concat(utcnow(),'.csv')",
-							"type": "Expression"
-						},
-						"folderPath": "output",
-						"fileSystem": "weatherdata"
-					}
-				},
-				"schema": {}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dtwhistoricalweatherdata')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileName": "72537094847 (2).csv",
-						"fileSystem": "raw"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"name": "STATION",
-						"type": "String"
-					},
-					{
-						"name": "DATE",
-						"type": "String"
-					},
-					{
-						"name": "SOURCE",
-						"type": "String"
-					},
-					{
-						"name": "LATITUDE",
-						"type": "String"
-					},
-					{
-						"name": "LONGITUDE",
-						"type": "String"
-					},
-					{
-						"name": "ELEVATION",
-						"type": "String"
-					},
-					{
-						"name": "NAME",
-						"type": "String"
-					},
-					{
-						"name": "REPORT_TYPE",
-						"type": "String"
-					},
-					{
-						"name": "CALL_SIGN",
-						"type": "String"
-					},
-					{
-						"name": "QUALITY_CONTROL",
-						"type": "String"
-					},
-					{
-						"name": "WND",
-						"type": "String"
-					},
-					{
-						"name": "CIG",
-						"type": "String"
-					},
-					{
-						"name": "VIS",
-						"type": "String"
-					},
-					{
-						"name": "TMP",
-						"type": "String"
-					},
-					{
-						"name": "DEW",
-						"type": "String"
-					},
-					{
-						"name": "SLP",
-						"type": "String"
-					},
-					{
-						"name": "AA1",
-						"type": "String"
-					},
-					{
-						"name": "AA2",
-						"type": "String"
-					},
-					{
-						"name": "AA3",
-						"type": "String"
-					},
-					{
-						"name": "AB1",
-						"type": "String"
-					},
-					{
-						"name": "AD1",
-						"type": "String"
-					},
-					{
-						"name": "AE1",
-						"type": "String"
-					},
-					{
-						"name": "AH1",
-						"type": "String"
-					},
-					{
-						"name": "AH2",
-						"type": "String"
-					},
-					{
-						"name": "AH3",
-						"type": "String"
-					},
-					{
-						"name": "AH4",
-						"type": "String"
-					},
-					{
-						"name": "AH5",
-						"type": "String"
-					},
-					{
-						"name": "AH6",
-						"type": "String"
-					},
-					{
-						"name": "AI1",
-						"type": "String"
-					},
-					{
-						"name": "AI2",
-						"type": "String"
-					},
-					{
-						"name": "AI3",
-						"type": "String"
-					},
-					{
-						"name": "AI4",
-						"type": "String"
-					},
-					{
-						"name": "AI5",
-						"type": "String"
-					},
-					{
-						"name": "AI6",
-						"type": "String"
-					},
-					{
-						"name": "AJ1",
-						"type": "String"
-					},
-					{
-						"name": "AK1",
-						"type": "String"
-					},
-					{
-						"name": "AL1",
-						"type": "String"
-					},
-					{
-						"name": "AM1",
-						"type": "String"
-					},
-					{
-						"name": "AN1",
-						"type": "String"
-					},
-					{
-						"name": "AT1",
-						"type": "String"
-					},
-					{
-						"name": "AT2",
-						"type": "String"
-					},
-					{
-						"name": "AT3",
-						"type": "String"
-					},
-					{
-						"name": "AT4",
-						"type": "String"
-					},
-					{
-						"name": "AT5",
-						"type": "String"
-					},
-					{
-						"name": "AT6",
-						"type": "String"
-					},
-					{
-						"name": "AT7",
-						"type": "String"
-					},
-					{
-						"name": "AT8",
-						"type": "String"
-					},
-					{
-						"name": "AU1",
-						"type": "String"
-					},
-					{
-						"name": "AU2",
-						"type": "String"
-					},
-					{
-						"name": "AU3",
-						"type": "String"
-					},
-					{
-						"name": "AW1",
-						"type": "String"
-					},
-					{
-						"name": "AW2",
-						"type": "String"
-					},
-					{
-						"name": "AW3",
-						"type": "String"
-					},
-					{
-						"name": "AW4",
-						"type": "String"
-					},
-					{
-						"name": "AX1",
-						"type": "String"
-					},
-					{
-						"name": "AX2",
-						"type": "String"
-					},
-					{
-						"name": "AX3",
-						"type": "String"
-					},
-					{
-						"name": "AX4",
-						"type": "String"
-					},
-					{
-						"name": "ED1",
-						"type": "String"
-					},
-					{
-						"name": "GA1",
-						"type": "String"
-					},
-					{
-						"name": "GA2",
-						"type": "String"
-					},
-					{
-						"name": "GA3",
-						"type": "String"
-					},
-					{
-						"name": "GD1",
-						"type": "String"
-					},
-					{
-						"name": "GD2",
-						"type": "String"
-					},
-					{
-						"name": "GD3",
-						"type": "String"
-					},
-					{
-						"name": "GD4",
-						"type": "String"
-					},
-					{
-						"name": "GE1",
-						"type": "String"
-					},
-					{
-						"name": "GF1",
-						"type": "String"
-					},
-					{
-						"name": "KA1",
-						"type": "String"
-					},
-					{
-						"name": "KA2",
-						"type": "String"
-					},
-					{
-						"name": "KB1",
-						"type": "String"
-					},
-					{
-						"name": "KB2",
-						"type": "String"
-					},
-					{
-						"name": "KB3",
-						"type": "String"
-					},
-					{
-						"name": "KC1",
-						"type": "String"
-					},
-					{
-						"name": "KC2",
-						"type": "String"
-					},
-					{
-						"name": "KD1",
-						"type": "String"
-					},
-					{
-						"name": "KD2",
-						"type": "String"
-					},
-					{
-						"name": "KE1",
-						"type": "String"
-					},
-					{
-						"name": "KG1",
-						"type": "String"
-					},
-					{
-						"name": "KG2",
-						"type": "String"
-					},
-					{
-						"name": "MA1",
-						"type": "String"
-					},
-					{
-						"name": "MD1",
-						"type": "String"
-					},
-					{
-						"name": "MF1",
-						"type": "String"
-					},
-					{
-						"name": "MG1",
-						"type": "String"
-					},
-					{
-						"name": "MH1",
-						"type": "String"
-					},
-					{
-						"name": "MK1",
-						"type": "String"
-					},
-					{
-						"name": "MV1",
-						"type": "String"
-					},
-					{
-						"name": "MW1",
-						"type": "String"
-					},
-					{
-						"name": "MW2",
-						"type": "String"
-					},
-					{
-						"name": "MW3",
-						"type": "String"
-					},
-					{
-						"name": "MW4",
-						"type": "String"
-					},
-					{
-						"name": "MW5",
-						"type": "String"
-					},
-					{
-						"name": "OC1",
-						"type": "String"
-					},
-					{
-						"name": "OD1",
-						"type": "String"
-					},
-					{
-						"name": "OE1",
-						"type": "String"
-					},
-					{
-						"name": "OE2",
-						"type": "String"
-					},
-					{
-						"name": "OE3",
-						"type": "String"
-					},
-					{
-						"name": "RH1",
-						"type": "String"
-					},
-					{
-						"name": "RH2",
-						"type": "String"
-					},
-					{
-						"name": "RH3",
-						"type": "String"
-					},
-					{
-						"name": "WA1",
-						"type": "String"
-					},
-					{
-						"name": "REM",
-						"type": "String"
-					},
-					{
-						"name": "EQD",
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dtwhistorictemps')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "Parquet",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"folderPath": "output/parquet",
-						"fileSystem": "weatherdata"
-					},
-					"compressionCodec": "snappy"
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/dtwhistoricweather')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "Json",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileSystem": "weatherdata"
-					}
-				},
-				"schema": {}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"

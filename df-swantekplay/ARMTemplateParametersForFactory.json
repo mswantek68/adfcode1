@@ -11,8 +11,14 @@
 		"swantekgeneralblob_connectionString": {
 			"value": ""
 		},
+		"targetcosmosdb_connectionString": {
+			"value": ""
+		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"value": "https://swantekdlsynapse.dfs.core.windows.net"
+		},
+		"NutritionJson_sasUri": {
+			"value": ""
 		},
 		"PlatedataOakland_properties_typeProperties_url": {
 			"value": "https://data.oaklandca.gov/resource/wy2w-ue82.json"
