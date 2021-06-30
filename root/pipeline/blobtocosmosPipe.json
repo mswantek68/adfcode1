@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Copy_gij",
+				"name": "BlobtoCosmos",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
