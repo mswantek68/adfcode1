@@ -19,6 +19,122 @@
 						"type": "Office365Source",
 						"allowedGroups": [
 							"ace9d25b-c812-47d7-9095-dc4d54b8db96"
+						],
+						"outputColumns": [
+							{
+								"name": "assistantName"
+							},
+							{
+								"name": "birthday"
+							},
+							{
+								"name": "businessAddress"
+							},
+							{
+								"name": "businessHomePage"
+							},
+							{
+								"name": "businessPhones"
+							},
+							{
+								"name": "categories"
+							},
+							{
+								"name": "changeKey"
+							},
+							{
+								"name": "children"
+							},
+							{
+								"name": "companyName"
+							},
+							{
+								"name": "createdDateTime"
+							},
+							{
+								"name": "department"
+							},
+							{
+								"name": "displayName"
+							},
+							{
+								"name": "emailAddresses"
+							},
+							{
+								"name": "fileAs"
+							},
+							{
+								"name": "generation"
+							},
+							{
+								"name": "givenName"
+							},
+							{
+								"name": "homeAddress"
+							},
+							{
+								"name": "homePhones"
+							},
+							{
+								"name": "id"
+							},
+							{
+								"name": "imAddresses"
+							},
+							{
+								"name": "initials"
+							},
+							{
+								"name": "jobTitle"
+							},
+							{
+								"name": "lastModifiedDateTime"
+							},
+							{
+								"name": "manager"
+							},
+							{
+								"name": "middleName"
+							},
+							{
+								"name": "mobilePhone"
+							},
+							{
+								"name": "nickName"
+							},
+							{
+								"name": "officeLocation"
+							},
+							{
+								"name": "otherAddress"
+							},
+							{
+								"name": "parentFolderId"
+							},
+							{
+								"name": "personalNotes"
+							},
+							{
+								"name": "profession"
+							},
+							{
+								"name": "spouseName"
+							},
+							{
+								"name": "surname"
+							},
+							{
+								"name": "title"
+							},
+							{
+								"name": "yomiCompanyName"
+							},
+							{
+								"name": "yomiGivenName"
+							},
+							{
+								"name": "yomiSurname"
+							}
 						]
 					},
 					"sink": {
