@@ -1,36 +1,6 @@
 {
 	"name": "pipeline1",
 	"properties": {
-		"activities": [
-			{
-				"name": "Copy data1",
-				"type": "Copy",
-				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "Office365Source",
-						"allowedGroups": [
-							"ace9d25b-c812-47d7-9095-dc4d54b8db96"
-						]
-					},
-					"enableStaging": false
-				},
-				"inputs": [
-					{
-						"referenceName": "Office365Table1",
-						"type": "DatasetReference"
-					}
-				]
-			}
-		],
 		"annotations": []
 	}
 }
