@@ -8,6 +8,12 @@
 		"AzureDataLakeStorage1_accountKey": {
 			"value": ""
 		},
+		"Contoso_connectionString": {
+			"value": ""
+		},
+		"cdmtestdl_accountKey": {
+			"value": ""
+		},
 		"swantekgeneralblob_connectionString": {
 			"value": ""
 		},
@@ -25,6 +31,9 @@
 		},
 		"WeatherDataRest_properties_typeProperties_url": {
 			"value": "https://api.weather.gov/gridpoints/DTX/60,40/forecast/hourly"
+		},
+		"cdmtestdl_properties_typeProperties_url": {
+			"value": "https://cdmtestlake.dfs.core.windows.net"
 		},
 		"containerUri": {
 			"value": ""

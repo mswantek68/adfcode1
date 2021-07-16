@@ -11,6 +11,14 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
 		},
+		"Contoso_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Contoso'"
+		},
+		"cdmtestdl_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'cdmtestdl'"
+		},
 		"swantekgeneralblob_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'swantekgeneralblob'"
@@ -34,6 +42,10 @@
 		"WeatherDataRest_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://api.weather.gov/gridpoints/DTX/60,40/forecast/hourly"
+		},
+		"cdmtestdl_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://cdmtestlake.dfs.core.windows.net"
 		}
 	},
 	"variables": {
@@ -422,177 +434,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/ConvertCtoF')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "Copy data1",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "JsonSource",
-								"storeSettings": {
-									"type": "AzureBlobFSReadSettings",
-									"recursive": true,
-									"enablePartitionDiscovery": false
-								},
-								"formatSettings": {
-									"type": "JsonReadSettings"
-								}
-							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings",
-									"copyBehavior": "FlattenHierarchy"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".csv"
-								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"mappings": [
-									{
-										"source": {
-											"path": "$['type']"
-										},
-										"sink": {
-											"name": "type"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['hash']"
-										},
-										"sink": {
-											"name": "hash"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['number']"
-										},
-										"sink": {
-											"name": "number"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['street']"
-										},
-										"sink": {
-											"name": "street"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['unit']"
-										},
-										"sink": {
-											"name": "unit"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['city']"
-										},
-										"sink": {
-											"name": "city"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['district']"
-										},
-										"sink": {
-											"name": "district"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['region']"
-										},
-										"sink": {
-											"name": "region"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['postcode']"
-										},
-										"sink": {
-											"name": "postcode"
-										}
-									},
-									{
-										"source": {
-											"path": "$['properties']['id']"
-										},
-										"sink": {
-											"name": "id"
-										}
-									},
-									{
-										"source": {
-											"path": "$['geometry']['coordinates'][0]"
-										},
-										"sink": {
-											"name": "longitude"
-										}
-									},
-									{
-										"source": {
-											"path": "$['geometry']['coordinates'][1]"
-										},
-										"sink": {
-											"name": "latitude"
-										}
-									}
-								],
-								"collectionReference": "$['geometry']['coordinates']",
-								"mapComplexValuesToString": false
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "OaklandCountyAddresses",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "OCAddressCSV",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					}
-				],
-				"annotations": [],
-				"lastPublishTime": "2021-06-16T18:46:11Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/OaklandCountyAddresses')]",
-				"[concat(variables('factoryId'), '/datasets/OCAddressCSV')]"
 			]
 		},
 		{
@@ -2357,6 +2198,19 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Contoso')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('Contoso_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/NutritionJson')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -2396,6 +2250,23 @@
 					"url": "[parameters('WeatherDataRest_properties_typeProperties_url')]",
 					"enableServerCertificateValidation": true,
 					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cdmtestdl')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('cdmtestdl_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('cdmtestdl_accountKey')]"
+					}
 				}
 			},
 			"dependsOn": []
