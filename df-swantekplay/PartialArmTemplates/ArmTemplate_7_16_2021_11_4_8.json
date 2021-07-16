@@ -1,0 +1,35 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "df-swantekplay"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Office3651')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "Office365",
+				"typeProperties": {
+					"office365TenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+					"servicePrincipalTenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+					"servicePrincipalId": "f4758c96-540b-4a8c-8579-f1b2023bf016",
+					"servicePrincipalKey": {
+						"type": "SecureString",
+						"value": "**********"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
